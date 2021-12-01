@@ -21,6 +21,6 @@ library(hw4)
 To use the function `mylm`:
 
 ```{r}
-mylm(mpg~cyl+disp, data = mtcars)
+# mylm(mpg~cyl+disp, data = mtcars)
 ```
 
