@@ -15,7 +15,7 @@
 #'
 #'@export
 #'
-mylm = function(f, data, penalty=0, tol=1e-17, useSparse=FALSE, useCpp=TRUE) {
+mylm = function(f, data, penalty=0, tol=1e-17, useSparse=FALSE, useCpp=FALSE) {
   if (!is.formula(f)) {
     stop("input must be a formula")
   }

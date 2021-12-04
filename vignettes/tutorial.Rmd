@@ -19,24 +19,23 @@ library(hw4)
 library(plyr)
 ```
 
-To use the function `mylm`, use the build in dataset "mtcars" as an example.
+To use the function `mylm`, use the build in dataset "mtcars" as an example.  
+Check all output from `mylm` versus output from `lm`, they give exactly the same estimated values, standard deviation of the estimations, p-values, standard error, degree of freedom, and residuals.
 
 ```{r}
 mylm(mpg~cyl+disp, data = mtcars)
-lm(mpg~cyl+disp, data = mtcars)
+summary(lm(mpg~cyl+disp, data = mtcars))
 ```
 
-MORE SPECIFIC WAY TO USE `mylm`:
-Estimated coefficients:
+MORE SPECIFIC WAY TO USE `mylm`:  
+Estimated coefficients:  
+
 * use ordinary least square estimation:
 ```{r}
-mylm(mpg~cyl+disp+wt+qsec, data = mtcars)
+lm.my <- mylm(mpg~cyl+disp+wt+qsec, data = mtcars)
+lm.my$call
+lm.my$coefficients
 lm(mpg~cyl+disp+wt+qsec, data = mtcars)
-```
-
-* penalty on including more variable, which supports model selection
-```{r}
-mylm(mpg~cyl+disp+wt+qsec, data = mtcars, penalty = 10)
 ```
 
 * deal with sparse regression by doing estimation using coordinate descent.
@@ -45,9 +44,14 @@ mtcars_modified <- mtcars[1:3,]
 mylm(mpg~cyl+disp+wt+qsec, data = mtcars_modified, useSparse = TRUE)
 ```
 
-* deal with sparse regression and set penalty on larger modle
+* deal with sparse regression and set penalty on larger model
 ```{r}
 mylm(mpg~cyl+disp+wt+qsec, data = mtcars_modified, useSparse = TRUE, penalty = 20)
+```
+
+* use specific stopping rules (adjust tolerance) when approximate estimations.
+```{r}
+mylm(mpg~cyl+disp+wt+qsec, data = mtcars_modified, tol = 1e-10, useSparse = TRUE, useCpp = TRUE)
 ```
 
 * want faster calculation using rcpp to approximate estimation.

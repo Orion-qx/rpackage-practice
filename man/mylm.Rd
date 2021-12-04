@@ -4,7 +4,7 @@
 \alias{mylm}
 \title{mylm}
 \usage{
-mylm(f, data, penalty = 0, tol = 1e-17, useSparse = FALSE, useCpp = TRUE)
+mylm(f, data, penalty = 0, tol = 1e-17, useSparse = FALSE, useCpp = FALSE)
 }
 \arguments{
 \item{data}{an optional data frame}
