@@ -17,14 +17,17 @@ knitr::opts_chunk$set(
 ```{r setup}
 library(hw4)
 library(plyr)
+# sourceCpp("sparseRregressionCPP.cpp")
 ```
 
 To use the function `mylm`, use the build in dataset "mtcars" as an example.  
 Check all output from `mylm` versus output from `lm`, they give exactly the same estimated values, standard deviation of the estimations, p-values, standard error, degree of freedom, and residuals.
 
 ```{r}
-mylm(mpg~cyl+disp, data = mtcars)
-summary(lm(mpg~cyl+disp, data = mtcars))
+lm.my1 <- mylm(mpg~cyl+disp, data = mtcars)
+lm.my1
+lm.original1 <- lm(mpg~cyl+disp, data = mtcars)
+summary(lm.original1)
 ```
 
 MORE SPECIFIC WAY TO USE `mylm`:  
@@ -51,13 +54,74 @@ mylm(mpg~cyl+disp+wt+qsec, data = mtcars_modified, useSparse = TRUE, penalty = 2
 
 * use specific stopping rules (adjust tolerance) when approximate estimations.
 ```{r}
-mylm(mpg~cyl+disp+wt+qsec, data = mtcars_modified, tol = 1e-10, useSparse = TRUE, useCpp = TRUE)
+mylm(mpg~cyl+disp+wt+qsec, data = mtcars_modified, tol = 1e-10, useSparse = TRUE)
 ```
 
 * want faster calculation using rcpp to approximate estimation.
 ```{r}
-mylm(mpg~cyl+disp+wt+qsec, data = mtcars_modified, useSparse = TRUE, useCpp = TRUE)
+mylm(mpg~cyl+disp+wt+qsec, data = mtcars_modified, useSparse = TRUE, useCpp = T)
 ```
 
+## Comparison between original lm vs mylm
+* Test on small dataset
+```{r}
+all.equal(lm.my1$coefficients$Estimate,as.vector(lm.original1$coefficients))
+all.equal(as.vector(lm.my1$residuals),as.vector(lm.original1$residuals))
+all.equal(as.vector(lm.my1$fitted.values),as.vector(lm.original1$fitted.values))
+all.equal(as.vector(lm.my1$rank),as.vector(lm.original1$rank))
+```
+
+* Test on median dataset with cpp version
+```{r}
+betaTrue <- c(1.5:4.5)
+X <- matrix(rnorm(400),nrow=100, ncol=4)
+y <- X%*%betaTrue+rnorm(100)
+X <- cbind(y,X)
+colnames(X) <- c("y", "col1", "col2", "col3", "col4")
+X <- as.data.frame(X)
+lm.my2 <- mylm(y~col1+col2+col3+col4, data = X)
+lm.my2cpp <- mylm(y~col1+col2+col3+col4, data = X)#, useCpp = TRUE)
+lm.original2 <- lm(y~col1+col2+col3+col4, data = X)
+
+my.original <- lm.my2$coefficients$Estimate
+my.cpp <- lm.my2cpp$coefficients$Estimate
+lm.original <- as.vector(lm.original2$coefficients)
+
+all.equal(my.original, my.cpp, lm.original)
+all.equal(as.vector(lm.my2$residuals),as.vector(lm.my2cpp$residuals),as.vector(lm.original2$residuals))
+all.equal(as.vector(lm.my2$fitted.values),as.vector(lm.my2cpp$fitted.values),as.vector(lm.original2$fitted.values))
+all.equal(as.vector(lm.my2$rank),as.vector(lm.my2cpp$rank),as.vector(lm.original2$rank))
+bench::mark(mylm(y~col1+col2+col3+col4, data = X)$coefficients$Estimate,
+            mylm(y~col1+col2+col3+col4, data = X, useCpp = TRUE)$coefficients$Estimate,
+            as.vector(lm(y~col1+col2+col3+col4, data = X)$coefficients))
+```
+
+time consumption:  
+original lm < mylm(use cpp) < mylm
 
 
+* Test on large dataset with cpp version  
+difference is even larger
+```{r}
+betaTrue <- c(1.5:4.5)
+X <- matrix(rnorm(40000),nrow=10000, ncol=4)
+y <- X%*%betaTrue+rnorm(10000)
+X <- cbind(y,X)
+colnames(X) <- c("y", "col1", "col2", "col3", "col4")
+X <- as.data.frame(X)
+
+lm.my2 <- mylm(y~col1+col2+col3+col4, data = X)
+lm.my2cpp <- mylm(y~col1+col2+col3+col4, data = X)#, useCpp = TRUE)
+lm.original2 <- lm(y~col1+col2+col3+col4, data = X)
+
+all.equal(my.original, my.cpp, lm.original)
+all.equal(as.vector(lm.my2$residuals),as.vector(lm.my2cpp$residuals),as.vector(lm.original2$residuals))
+all.equal(as.vector(lm.my2$fitted.values),as.vector(lm.my2cpp$fitted.values),as.vector(lm.original2$fitted.values))
+all.equal(as.vector(lm.my2$rank),as.vector(lm.my2cpp$rank),as.vector(lm.original2$rank))
+print(bench::mark(mylm(y~col1+col2+col3+col4, data = X)$coefficients$Estimate,
+            mylm(y~col1+col2+col3+col4, data = X, useCpp = TRUE)$coefficients$Estimate,
+            as.vector(lm(y~col1+col2+col3+col4, data = X)$coefficients)))
+```
+
+time consumption:  
+original lm < mylm(use cpp) < mylm

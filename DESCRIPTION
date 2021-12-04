@@ -7,7 +7,7 @@ Maintainer: Qiaoxue Liu <qiaoxl@umich.edu>
 Description: Fit linear models.
     This function takes formula and return a fitted linear model. 
     It deals with both continuous random variable and variables can be treated as continuous random variable.
-    It also 
+    It can also help with parameter selection for sparse regression.
 License: GPL-3
 Encoding: UTF-8
 LazyData: true
@@ -18,3 +18,7 @@ Suggests:
     testthat (>= 3.0.0)
 VignetteBuilder: knitr
 Config/testthat/edition: 3
+LinkingTo: 
+    Rcpp
+Imports: 
+    Rcpp

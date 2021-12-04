@@ -1,5 +1,6 @@
 #include <Rcpp.h>
 #include <stdio.h>
+#include <cstdlib>
 using namespace Rcpp;
 
 // [[Rcpp::export]]

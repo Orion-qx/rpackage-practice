@@ -1,21 +1,36 @@
 #'mylm
 #'
-#'Fit a linear model.
+#'This function takes formula and return a fitted linear model.
+#'It deals with both continuous random variable and variables can be treated as continuous random variable.
+#'It can also help with parameter selection for sparse regression.
 #'
 #'@param formula an object of class 'formula': a symbolic description of the model to be fitted.
-#'@param data an optional data frame
+#'@param data an data frame which includes all x's and y.
+#'@param penalty an optional double used for model selection for sparse regression. Default is 0 penalty.
+#'@param tol an optional double used for approximating estimation of coefficient for sparse regression. Default is 1e-17.
+#'@param useSparse an optional logical value. If TRUE, the model will use coordinate descent to approximate estimator of coefficients.
+#'@param useCpp an optional logical value. If TRUE, the model will use the same method of approximation but written in C++.
 #'
-#'@return mylm returns an object of class 'lm'
+#'@return mylm returns an list contains estimations of coefficients, the corresponding result from t test, fitted values, and residuals.
 #'
 #'@examples
 #'library(Rcpp)
 #'library(plyr)
-#'sourceCpp("sparseRregressionCPP.cpp")
-#'mylm(mpg~cyl+disp, mtcars)
+#'mylm(mpg~cyl+disp, mtcars) #sourceCpp("sparseRregressionCPP.cpp")
+#'
+## usethis namespace: start
+#' @useDynLib hw4, .registration = TRUE
+## usethis namespace: end
+NULL
+## usethis namespace: start
+#' @importFrom Rcpp sourceCpp
+## usethis namespace: end
+NULL
 #'
 #'@export
 #'
 mylm = function(f, data, penalty=0, tol=1e-17, useSparse=FALSE, useCpp=FALSE) {
+  # browser()
   if (!is.formula(f)) {
     stop("input must be a formula")
   }
@@ -42,6 +57,7 @@ mysimplelm.fit = function(X, y, include.intercept, f, vars, tm, penalty, tol, us
   if (ncol(y) != 1) {
     stop("y must be a vector")
   }
+
   if (nrowX != length(y)) { # make sure X and y have the same row number
     stop("matrix/vector dimensions differ")
   }
@@ -162,5 +178,30 @@ sig.code <- function(vals) {
 # mtcars_modified <- mtcars[1:3,]
 # mylm(mpg~cyl+disp+wt+qsec, data = mtcars_modified, useSparse = TRUE)
 # mylm(mpg~cyl+disp+wt+qsec, data = mtcars_modified, useSparse = TRUE, penalty = 20)
+# betaTrue <- c(1.5:4.5)
+# X <- matrix(rnorm(500),nrow=100, ncol=4)
+# y <- X%*%betaTrue+rnorm(100)
+# X <- cbind(y,X)
+# colnames(X) <- c("y", "col1", "col2", "col3", "col4")
+# X <- as.data.frame(X)
+# lm.my2 <- mylm(y~col1+col2+col3+col4, data = X)
+# lm.my2$coefficients
+# lm(y~col1+col2+col3+col4, data = X)
+
+# sourceCpp("sparseRregressionCPP.cpp")
+# betaTrue <- c(1.5:4.5)
+# X <- matrix(rnorm(40000),nrow=10000, ncol=4)
+# y <- X%*%betaTrue+rnorm(10000)
+# X <- cbind(y,X)
+# colnames(X) <- c("y", "col1", "col2", "col3", "col4")
+# X <- as.data.frame(X)
+# lm.my2 <- mylm(y~col1+col2+col3+col4, data = X)
+# lm.my2cpp <- mylm(y~col1+col2+col3+col4, data = X, useCpp = TRUE)
+# lm.original2 <- lm(y~col1+col2+col3+col4, data = X)
+# bench::mark(mylm(y~col1+col2+col3+col4, data = X)$coefficients$Estimate,
+#             mylm(y~col1+col2+col3+col4, data = X, useCpp = TRUE)$coefficients$Estimate,
+#             as.vector(lm(y~col1+col2+col3+col4, data = X)$coefficients))
+
+
 
 
