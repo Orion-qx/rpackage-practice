@@ -61,7 +61,7 @@ mysimplelm.fit = function(X, y, include.intercept, f, vars, tm, penalty, tol, us
     xyvec <- t(X)%*%y
     if(useCpp) {
       beta <- sparseRegression(cMatrix, const, bvec, xyvec, penalty, p, tol)
-      print(beta)
+      # print(beta)
     } else {
       beta <- sparseRegression(cMatrix, const, bvec, xyvec, penalty, p, tol)
     }
@@ -69,6 +69,7 @@ mysimplelm.fit = function(X, y, include.intercept, f, vars, tm, penalty, tol, us
   } else {
     beta <- solve(t(X) %*% X) %*% t(X) %*% y
   }
+
 
   # get coefficients
   betaVec <- as.vector(beta)
@@ -79,32 +80,35 @@ mysimplelm.fit = function(X, y, include.intercept, f, vars, tm, penalty, tol, us
     attr(betaVec, "names") <- c(variables)
   }
   names(betaVec) <- attr(betaVec, "names")
+  if (!smalldata) {
+    # get fitted values
+    nobserves <- length(y)
+    fittedy <- as.numeric(X%*%beta)
+    idx <- 1:nobserves
+    attr(fittedy, "names") <- idx
 
-  # get fitted values
-  nobserves <- length(y)
-  fittedy <- as.numeric(X%*%beta)
-  idx <- 1:nobserves
-  attr(fittedy, "names") <- idx
+    # get residuals-related data
+    res <- as.numeric(y)-fittedy
+    attr(res, "names") <- idx
+    rankX <- ncol(X+1) # get rank
+    dfres <- nobserves - rankX # get df.residual
+    ressd <- as.numeric(sqrt(t(res)%*%(res)/dfres)) # get residual standard error
 
-  # get residuals-related data
-  res <- as.numeric(y)-fittedy
-  attr(res, "names") <- idx
-  rankX <- ncol(X+1) # get rank
-  dfres <- nobserves - rankX # get df.residual
-  ressd <- as.numeric(sqrt(t(res)%*%(res)/dfres)) # get residual standard error
+    # get beta variance / df
+    betaVarMatrix <- ressd^2 * solve(t(X) %*% X)
+    betastd <- sqrt(diag(betaVarMatrix))
+    betatvals <- betaVec/betastd
+    tpvals <- 2*(1-pt(abs(betatvals), df=dfres))
+    betadf <- data.frame(betaVec, betastd, betatvals, tpvals, sig.code(tpvals), row.names = attr(betaVec, "names"))
+    colnames(betadf) <- c("Estimate", "Std. Error", "t value", "Pr(>|t|)", "")
 
-  # get beta variance / df
-  betaVarMatrix <- ressd^2 * solve(t(X) %*% X)
-  betastd <- sqrt(diag(betaVarMatrix))
-  betatvals <- betaVec/betastd
-  tpvals <- 2*(1-pt(abs(betatvals), df=dfres))
-  betadf <- data.frame(betaVec, betastd, betatvals, tpvals, sig.code(tpvals), row.names = attr(betaVec, "names"))
-  colnames(betadf) <- c("Estimate", "Std. Error", "t value", "Pr(>|t|)", "")
-
-  # construct resulting table
-  resl <- list("call"=f, "coefficients"=betadf, "residuals"=res, "rank"=rankX,
-               "fitted.values"=fittedy, "terms"=terms(f),
-               "residual.sd" = ressd, "df.residual" = dfres)
+    # construct resulting table
+    resl <- list("call"=f, "coefficients"=betadf, "residuals"=res, "rank"=rankX,
+                 "fitted.values"=fittedy, "terms"=terms(f),
+                 "residual.sd" = ressd, "df.residual" = dfres)
+  } else {
+    resl <- list("call"=f, "coefficients"=betaVec)
+  }
   return(resl)
 }
 
@@ -154,5 +158,9 @@ sig.code <- function(vals) {
   }
   return(otpt)
 }
+
+# mtcars_modified <- mtcars[1:3,]
+# mylm(mpg~cyl+disp+wt+qsec, data = mtcars_modified, useSparse = TRUE)
+# mylm(mpg~cyl+disp+wt+qsec, data = mtcars_modified, useSparse = TRUE, penalty = 20)
 
 
