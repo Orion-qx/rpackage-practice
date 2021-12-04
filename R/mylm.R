@@ -8,6 +8,9 @@
 #'@return mylm returns an object of class 'lm'
 #'
 #'@examples
+#'library(Rcpp)
+#'library(plyr)
+#'sourceCpp("sparseRregressionCPP.cpp")
 #'mylm(mpg~cyl+disp, mtcars)
 #'
 #'@export
@@ -48,15 +51,17 @@ mysimplelm.fit = function(X, y, include.intercept, f, vars, tm, penalty, tol, us
     X <- cbind(1, X)
     p <- p+1
   }
-  smalldata=TRUE
+  # smalldata=TRUE
+  # useCpp = FALSE
   # use normal regression method or sparse regression
-  if (smalldata | useSparse) {
+  if (smalldata | useSparse | penalty != 0) {
     cMatrix <- t(X)%*%X
     const <- diag(cMatrix)
     bvec <- numeric(p)
     xyvec <- t(X)%*%y
     if(useCpp) {
-      beta <- sparseRegressionCPP(cMatrix, const, bvec, xyvec, penalty, p, tol)
+      beta <- sparseRegression(cMatrix, const, bvec, xyvec, penalty, p, tol)
+      print(beta)
     } else {
       beta <- sparseRegression(cMatrix, const, bvec, xyvec, penalty, p, tol)
     }
@@ -124,7 +129,7 @@ sparseRegression <- function(cMatrix, const, bvec, xyvec, penalty, ncolX, tol) {
         } else {
           bvec[i] <- est + tempconst
         }
-        maxdiff <- max(bvec-oldbvec)
+        maxdiff <- max(abs(bvec-oldbvec))
       }
     }
   }
@@ -150,6 +155,4 @@ sig.code <- function(vals) {
   return(otpt)
 }
 
-library(Rcpp)
-sourceCpp("sparseRegressionCPP.cpp")
-print(mylm(mpg~cyl+disp,data=mtcars))
+

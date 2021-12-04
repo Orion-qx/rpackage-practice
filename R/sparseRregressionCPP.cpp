@@ -1,4 +1,6 @@
 #include <Rcpp.h>
+#include <stdio.h>
+#include <cstdlib>
 using namespace Rcpp;
 
 // [[Rcpp::export]]
@@ -6,8 +8,12 @@ NumericVector sparseRegressionCPP(NumericMatrix cMatrix,
                                   NumericVector constant, NumericVector bvec, NumericVector xyvec,
                                   double penalty, int p, double tol) {
   double maxdiff = 1;
+  double currmax;
   while (maxdiff > tol) {
-    NumericVector oldbvec = bvec;
+    NumericVector oldbvec(p);
+    for (int i = 0; i < p; i++) {
+      oldbvec[i] = bvec[i];
+    }
     for (int i = 0; i < p; i++) {
       double approxb = 0;
       for (int j = 0; j < p; j++) {
@@ -24,8 +30,16 @@ NumericVector sparseRegressionCPP(NumericMatrix cMatrix,
       } else {
         bvec[i] = est + tempconstant;
       }
-      maxdiff = max(bvec-oldbvec);
+      double currval = abs(oldbvec[i]-bvec[i]);
+      if (i == 0) {
+        currmax = currval;
+      } else {
+        if (currval > currmax) {
+          currmax = currval;
+        }
+      }
     }
+    maxdiff = currmax;
   }
   return bvec;
 }

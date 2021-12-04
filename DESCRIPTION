@@ -5,7 +5,9 @@ Version: 0.1.0
 Author: Qiaoxue Liu
 Maintainer: Qiaoxue Liu <qiaoxl@umich.edu>
 Description: Fit linear models.
-    This function takes formula and return a fitted linear model. It deals with both continuous and categorical random variable.
+    This function takes formula and return a fitted linear model. 
+    It deals with both continuous random variable and variables can be treated as continuous random variable.
+    It also 
 License: GPL-3
 Encoding: UTF-8
 LazyData: true
