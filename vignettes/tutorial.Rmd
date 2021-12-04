@@ -16,6 +16,8 @@ knitr::opts_chunk$set(
 
 ```{r setup}
 library(hw4)
+library(plyr)
+sourceCpp()
 ```
 
 To use the function `mylm`:
